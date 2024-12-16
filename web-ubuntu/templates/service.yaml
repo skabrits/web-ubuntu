@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "chemistry-pack.fullname" . }}
+  {{- if not .Values.settings.kasm }}
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: {{ .Values.settings.turn.ip }}
+  {{- end }}
+  labels:
+    {{- include "chemistry-pack.labels" . | nindent 4 }}
+spec:
+  type: {{ if not .Values.settings.kasm }}LoadBalancer{{ else }}{{ .Values.service.type }}{{ end }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: {{ .Values.service.filebrowser.port }}
+      targetPort: file
+      protocol: TCP
+      name: file
+    {{- if not .Values.settings.kasm }}
+    - port: {{ .Values.settings.turn.basePort }}
+      protocol: UDP
+      targetPort: turn
+      name: turn
+    {{- range untilStep (int .Values.settings.turn.minPort) (int (add1 .Values.settings.turn.maxPort)) 1 }}
+    - port: {{ . }}
+      protocol: UDP
+      targetPort: turn-{{ . }}
+      name: turn-{{ . }}
+    {{- end }}
+    {{- end }}
+  selector:
+    {{- include "chemistry-pack.selectorLabels" . | nindent 4 }}

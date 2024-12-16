@@ -1,0 +1,107 @@
+{{- $ingressPATH := (index (index .Values.ingress.hosts 0).paths 0).path -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "chemistry-pack.fullname" . }}
+  labels:
+    {{- include "chemistry-pack.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "chemistry-pack.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "chemistry-pack.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: file
+              containerPort: 9000
+              protocol: TCP
+            {{- if not .Values.settings.kasm }}
+            - containerPort: 3478
+              protocol: UDP
+              name: turn
+            {{- range untilStep (int .Values.settings.turn.minPort) (int (add1 .Values.settings.turn.maxPort)) 1 }}
+            - containerPort: {{ . }}
+              protocol: UDP
+              name: turn-{{ . }}
+            {{- end }}
+            {{- end }}
+          livenessProbe:
+            initialDelaySeconds: 30
+            failureThreshold: 10
+            httpGet:
+              path: {{ $ingressPATH }}
+              port: http
+              httpHeaders:
+              - name: Authorization
+                value: Basic {{ printf "%s:%s" .Values.settings.user .Values.settings.password  | b64enc }}
+          readinessProbe:
+            initialDelaySeconds: 30
+            failureThreshold: 10
+            httpGet:
+              path: {{ $ingressPATH }}
+              port: http
+              httpHeaders:
+              - name: Authorization
+                value: Basic {{ printf "%s:%s" .Values.settings.user .Values.settings.password  | b64enc }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          stdin: true
+          tty: true
+          envFrom:
+          - configMapRef:
+              name: environment-cm-{{ include "chemistry-pack.fullname" . }}
+          volumeMounts:
+          - mountPath: "/home/ubuntu"
+            name: data-storage
+          - mountPath: /cache
+            name: cache-vol
+          - mountPath: /dev/shm
+            name: dshm
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: "Memory"
+          sizeLimit: 4Gi
+      - name: cache-vol
+        persistentVolumeClaim:
+          claimName: cache-pvc-{{ include "chemistry-pack.fullname" . }}
+      - name: data-storage
+        persistentVolumeClaim:
+          claimName: pvc-{{ include "chemistry-pack.fullname" . }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

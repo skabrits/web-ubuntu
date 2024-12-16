@@ -1,0 +1,105 @@
+# Default values for chemistry-pack.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: skabrits/web-ubuntu
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "0.1.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+  filebrowser:
+    port: 81
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-ssl-verify: "false"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: 10000m
+    cert-manager.io/cluster-issuer: letsencrypt-cluster
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+  hosts:
+    - paths:
+        - path: /
+          pathType: Prefix
+  tls:
+  - hosts:
+    - example.com
+    secretName: web-ubuntu-tls-secret
+
+envs:
+  TZ: "UTC"
+  DISPLAY_SIZEW: "1920"
+  DISPLAY_SIZEH: "1080"
+  DISPLAY_REFRESH: "60"
+  DISPLAY_DPI: "96"
+  DISPLAY_CDEPTH: "24"
+  BASE_URL: "/files"
+  SELKIES_ENABLE_RESIZE: "false"
+  SELKIES_VIDEO_BITRATE: "8000"
+  SELKIES_FRAMERATE: "60"
+  SELKIES_AUDIO_BITRATE: "128000"
+  SELKIES_ENABLE_BASIC_AUTH: "true"
+  SELKIES_ENABLE_HTTPS: "false"
+
+settings:
+  user: admin
+  password: admin
+  kasm: false
+  turn:
+    ip: 192.168.0.2
+    basePort: 3478
+    minPort: 65530
+    maxPort: 65535
+    host: st.skabrits.duckdns.org
+
+pvc:
+  mode: ReadWriteOnce
+  size: 40Gi
+  cache:
+    size: 20Gi
+  storageClass: longhorn
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
