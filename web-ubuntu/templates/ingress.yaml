@@ -1,5 +1,5 @@
 {{- if .Values.ingress.enabled -}}
-{{- $fullName := include "chemistry-pack.fullname" . -}}
+{{- $fullName := include "web-ubuntu.fullname" . -}}
 {{- $svcPort := .Values.service.port -}}
 {{- $filePort := .Values.service.filebrowser.port -}}
 {{- $filePath := .Values.envs.BASE_URL -}}
@@ -23,7 +23,7 @@ kind: Ingress
 metadata:
   name: {{ $fullName }}
   labels:
-    {{- include "chemistry-pack.labels" . | nindent 4 }}
+    {{- include "web-ubuntu.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}

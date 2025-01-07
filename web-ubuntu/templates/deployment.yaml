@@ -2,16 +2,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "chemistry-pack.fullname" . }}
+  name: {{ include "web-ubuntu.fullname" . }}
   labels:
-    {{- include "chemistry-pack.labels" . | nindent 4 }}
+    {{- include "web-ubuntu.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "chemistry-pack.selectorLabels" . | nindent 6 }}
+      {{- include "web-ubuntu.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -19,7 +19,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "chemistry-pack.selectorLabels" . | nindent 8 }}
+        {{- include "web-ubuntu.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -74,7 +74,7 @@ spec:
           tty: true
           envFrom:
           - configMapRef:
-              name: environment-cm-{{ include "chemistry-pack.fullname" . }}
+              name: environment-cm-{{ include "web-ubuntu.fullname" . }}
           volumeMounts:
           - mountPath: "/home/ubuntu"
             name: data-storage
@@ -89,10 +89,10 @@ spec:
           sizeLimit: 4Gi
       - name: cache-vol
         persistentVolumeClaim:
-          claimName: cache-pvc-{{ include "chemistry-pack.fullname" . }}
+          claimName: cache-pvc-{{ include "web-ubuntu.fullname" . }}
       - name: data-storage
         persistentVolumeClaim:
-          claimName: pvc-{{ include "chemistry-pack.fullname" . }}
+          claimName: pvc-{{ include "web-ubuntu.fullname" . }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
