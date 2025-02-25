@@ -5,7 +5,7 @@ metadata:
   {{- if not .Values.settings.kasm }}
   annotations:
     metallb.universe.tf/loadBalancerIPs: {{ .Values.settings.turn.ip }}
-    tplink-ports.any-ports: "{{ .Values.settings.turn.minPort }}-{{ .Values.settings.turn.maxPort }}:,{{ .Values.settings.turn.basePort }}:{{ .Values.settings.turn.basePort }}"
+    tplink-ports.any-ports: {{ if ne (int (add1 .Values.settings.turn.basePort)) (int .Values.settings.turn.minPort) }}"{{ .Values.settings.turn.minPort }}-{{ .Values.settings.turn.maxPort }}:,{{ .Values.settings.turn.basePort }}:{{ .Values.settings.turn.basePort }}"{{ else }}"{{ .Values.settings.turn.basePort }}-{{ .Values.settings.turn.maxPort }}:"{{ end }}
   {{- end }}
   labels:
     {{- include "web-ubuntu.labels" . | nindent 4 }}
